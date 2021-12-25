@@ -31,16 +31,21 @@ int main(int argc, const char* argv[]) {
     [window makeKeyAndOrderFront:nil];
     [window setDelegate:[WindowDelegate new]];
 
+    size_t lastBufferSize = 0;
+
     while (running) {
         // draw bitmap
         int bitmapWidth = (int) window.contentView.bounds.size.width;
         int bitmapHeight = (int) window.contentView.bounds.size.height;
         int bytesPerPixel = 4;
-        int pitch = bitmapWidth * bytesPerPixel;
-        if (buffer == nil) {
-            buffer = (uint8_t*) malloc(pitch * bitmapHeight);
+        long pitch = bitmapWidth * bytesPerPixel;
+        size_t bufferSize = pitch * bitmapHeight;
+        if (bufferSize != lastBufferSize) {
+            lastBufferSize = bufferSize;
+            free(buffer);
+            buffer = (uint8_t*) malloc(bufferSize);
         }
-        for (int i = 0; i < pitch * bitmapHeight; i += 4) {
+        for (size_t i = 0; i < bufferSize; i += 4) {
             buffer[i + 0] = 0xff; // red
             buffer[i + 1] = 0x00; // green
             buffer[i + 2] = 0x33; // blue
