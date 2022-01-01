@@ -5,7 +5,7 @@
 #include <cstring>
 #include <xcb/xcb.h>
 #include <xcb/xcb_image.h>
-#include <ctime>
+#include <pulse/pulseaudio.h>
 #include "../game.cpp"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -40,7 +40,71 @@ void destroyWindow(xcb_connection_t* conn, xcb_window_t window) {
     xcb_destroy_window(conn, window);
 }
 
+void contextStateCb(pa_context* context, void* mainloop) {
+    pa_threaded_mainloop_signal((pa_threaded_mainloop*) mainloop, 0);
+}
+
+void streamStateCb(pa_stream* stream, void* mainloop) {
+    pa_threaded_mainloop_signal((pa_threaded_mainloop*) mainloop, 0);
+}
+
+void streamWriteCb(pa_stream* stream, size_t requestedBytes, void* userdata) {
+    static uint64_t counter = 0;
+    int bytes_remaining = requestedBytes;
+    while (bytes_remaining > 0) {
+        uint8_t* buffer = nullptr;
+        size_t bytes_to_fill = 44100;
+        size_t i;
+
+        if (bytes_to_fill > bytes_remaining) {
+            bytes_to_fill = bytes_remaining;
+        }
+
+        pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
+
+        for (i = 0; i < bytes_to_fill; i += 2) {
+            // middle c
+            uint8_t v = (counter <= 44100/262/2) ? 0x55 : 0;
+            buffer[i] = v;
+            buffer[i + 1] = v;
+            counter++;
+            counter %= 44100/262;
+        }
+
+        pa_stream_write(stream, buffer, bytes_to_fill, nullptr, 0LL,
+                PA_SEEK_RELATIVE);
+        bytes_remaining -= bytes_to_fill;
+    }
+}
+
 int main() {
+    pa_threaded_mainloop* mainloop = pa_threaded_mainloop_new();
+    pa_mainloop_api* mainloopApi = pa_threaded_mainloop_get_api(mainloop);
+    pa_context* paContext = pa_context_new(mainloopApi, "game");
+    pa_context_set_state_callback(paContext, &contextStateCb, mainloop);
+    pa_threaded_mainloop_lock(mainloop);
+    pa_threaded_mainloop_start(mainloop);
+    pa_context_connect(paContext, nullptr, PA_CONTEXT_NOFLAGS, nullptr);
+    while (pa_context_get_state(paContext) != PA_CONTEXT_READY) {
+        pa_threaded_mainloop_wait(mainloop);
+    }
+
+    const pa_sample_spec audioSampleSpec = {
+            .format = PA_SAMPLE_U8,
+            .rate = 44100,
+            .channels = 2
+    };
+    pa_stream* audioStream = pa_stream_new(paContext, "game-audio",
+            &audioSampleSpec, nullptr);
+    pa_stream_set_state_callback(audioStream, &streamStateCb, mainloop);
+    pa_stream_set_write_callback(audioStream, &streamWriteCb, mainloop);
+    pa_stream_connect_playback(audioStream, nullptr, nullptr, PA_STREAM_NOFLAGS,
+            nullptr, nullptr);
+    while (pa_stream_get_state(audioStream) != PA_STREAM_READY) {
+        pa_threaded_mainloop_wait(mainloop);
+    }
+    pa_threaded_mainloop_unlock(mainloop);
+
     uint32_t width = 1024, height = 720;
 
     xcb_connection_t* conn = xcb_connect(nullptr, nullptr);
@@ -165,6 +229,7 @@ int main() {
         xcb_image_destroy(image);
         xcb_copy_area(conn, pixmap, window, gc, 0, 0, 0, 0, width, height);
         xcb_flush(conn);
+        usleep(1000);
     }
 
     free(pixels);
@@ -172,5 +237,8 @@ int main() {
     xcb_free_gc(conn, gc);
     destroyWindow(conn, window);
     xcb_disconnect(conn);
+    pa_stream_disconnect(audioStream);
+    pa_threaded_mainloop_stop(mainloop);
+    pa_threaded_mainloop_free(mainloop);
     return 0;
 }
