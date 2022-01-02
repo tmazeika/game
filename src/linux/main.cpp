@@ -61,12 +61,12 @@ int main() {
     pa_mainloop_api* mainloopApi = pa_threaded_mainloop_get_api(mainloop);
     pa_context* paContext = pa_context_new(mainloopApi, "game");
     pa_context_set_state_callback(paContext, &contextStateCb, mainloop);
+    pa_threaded_mainloop_lock(mainloop);
     pa_threaded_mainloop_start(mainloop);
     pa_context_connect(paContext, nullptr, PA_CONTEXT_NOFLAGS, nullptr);
     while (pa_context_get_state(paContext) != PA_CONTEXT_READY) {
         pa_threaded_mainloop_wait(mainloop);
     }
-
     const pa_sample_spec audioSampleSpec = {
             .format = PA_SAMPLE_S16NE,
             .rate = 44100,
@@ -81,6 +81,7 @@ int main() {
     while (pa_stream_get_state(audioStream) != PA_STREAM_READY) {
         pa_threaded_mainloop_wait(mainloop);
     }
+    pa_threaded_mainloop_unlock(mainloop);
 
     uint32_t width = 1024, height = 720;
 
@@ -206,7 +207,7 @@ int main() {
         xcb_image_destroy(image);
         xcb_copy_area(conn, pixmap, window, gc, 0, 0, 0, 0, width, height);
         xcb_flush(conn);
-        usleep(1000);
+        usleep(10000);
     }
 
     free(pixels);
