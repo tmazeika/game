@@ -1,7 +1,6 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <cstdio>
-#include <cmath>
 #include <chrono>
 #include <cstring>
 #include <xcb/xcb.h>
