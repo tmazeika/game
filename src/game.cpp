@@ -29,10 +29,10 @@ void writeSound(size_t sampleCount, Sample samples[]) {
     const float hz = 261.6255653005986f;
     const float samplesPerCycle = 44100.0f / hz;
 
-    for (size_t i = 0; i < sampleCount - 1; i += 2, counter++) {
+    for (size_t i = 1; i < sampleCount; i += 2, counter++) {
         const float t =
                 fmodf((float) counter, samplesPerCycle) / samplesPerCycle;
-        samples[i] = samples[i + 1] = (Sample) (
+        samples[i - 1] = samples[i] = (Sample) (
                 sinf(t * 2.0f * pi) * (maxVolume / 2.0f)
         );
     }
