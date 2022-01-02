@@ -53,7 +53,7 @@ void streamWriteCb(pa_stream* stream, size_t requestedBytes, void* userdata) {
     static uint64_t counter = 0;
     size_t bytes_remaining = requestedBytes;
     while (bytes_remaining > 0) {
-        uint8_t* buffer = nullptr;
+        int16_t* buffer = nullptr;
         size_t bytes_to_fill = 44100;
         size_t i;
 
@@ -64,12 +64,12 @@ void streamWriteCb(pa_stream* stream, size_t requestedBytes, void* userdata) {
         pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
 
         const float hz = 261.6255653005986f;
-        for (i = 0; i < bytes_to_fill; i += 2) {
+        for (i = 0; i < bytes_to_fill / 2; i += 2) {
             const float t = fmodf((float) counter, 44100.0f / hz) / (44100.0f / hz);
 
             // middle c
 //            uint8_t v = (counter <= 44100/262/2) ? 0x11 : 0;
-            uint8_t v = (uint8_t) (((sinf(t * 2.0f * 3.14159f) + 1.0f) / 2.0f) * 100.0f);
+            int16_t v = (int16_t) (((sinf(t * 2.0f * 3.14159f) + 1.0f) / 2.0f) * 30000.0f);
             buffer[i] = v;
             buffer[i + 1] = v;
             counter++;
@@ -94,7 +94,7 @@ int main() {
     }
 
     const pa_sample_spec audioSampleSpec = {
-            .format = PA_SAMPLE_U8,
+            .format = PA_SAMPLE_S16NE,
             .rate = 44100,
             .channels = 2
     };
