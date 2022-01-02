@@ -12,6 +12,10 @@ union Pixel {
     uint32_t rgb;
 };
 
+typedef int16_t Sample;
+
 void render(uint32_t width, uint32_t height, Pixel pixels[], float delta);
+
+void writeSound(size_t sampleCount, Sample samples[]);
 
 #endif

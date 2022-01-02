@@ -49,36 +49,11 @@ void streamStateCb(pa_stream* stream, void* mainloop) {
     pa_threaded_mainloop_signal((pa_threaded_mainloop*) mainloop, 0);
 }
 
-void streamWriteCb(pa_stream* stream, size_t requestedBytes, void* userdata) {
-    static uint64_t counter = 0;
-    size_t bytes_remaining = requestedBytes;
-    while (bytes_remaining > 0) {
-        int16_t* buffer = nullptr;
-        size_t bytes_to_fill = 44100;
-        size_t i;
-
-        if (bytes_to_fill > bytes_remaining) {
-            bytes_to_fill = bytes_remaining;
-        }
-
-        pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
-
-        const float hz = 261.6255653005986f;
-        for (i = 0; i < bytes_to_fill / 2; i += 2) {
-            const float t = fmodf((float) counter, 44100.0f / hz) / (44100.0f / hz);
-
-            // middle c
-//            uint8_t v = (counter <= 44100/262/2) ? 0x11 : 0;
-            int16_t v = (int16_t) (((sinf(t * 2.0f * 3.14159f) + 1.0f) / 2.0f) * 30000.0f);
-            buffer[i] = v;
-            buffer[i + 1] = v;
-            counter++;
-        }
-
-        pa_stream_write(stream, buffer, bytes_to_fill, nullptr, 0LL,
-                PA_SEEK_RELATIVE);
-        bytes_remaining -= bytes_to_fill;
-    }
+void streamWriteCb(pa_stream* stream, size_t bytesToFill, void* userData) {
+    int16_t* buf = nullptr;
+    pa_stream_begin_write(stream, (void**) &buf, &bytesToFill);
+    writeSound(bytesToFill / sizeof(int16_t), buf);
+    pa_stream_write(stream, buf, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
 }
 
 int main() {
@@ -86,7 +61,6 @@ int main() {
     pa_mainloop_api* mainloopApi = pa_threaded_mainloop_get_api(mainloop);
     pa_context* paContext = pa_context_new(mainloopApi, "game");
     pa_context_set_state_callback(paContext, &contextStateCb, mainloop);
-    pa_threaded_mainloop_lock(mainloop);
     pa_threaded_mainloop_start(mainloop);
     pa_context_connect(paContext, nullptr, PA_CONTEXT_NOFLAGS, nullptr);
     while (pa_context_get_state(paContext) != PA_CONTEXT_READY) {
@@ -107,7 +81,6 @@ int main() {
     while (pa_stream_get_state(audioStream) != PA_STREAM_READY) {
         pa_threaded_mainloop_wait(mainloop);
     }
-    pa_threaded_mainloop_unlock(mainloop);
 
     uint32_t width = 1024, height = 720;
 
