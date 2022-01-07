@@ -1,20 +1,29 @@
 #include "game.h"
+
 #include <cmath>
 
-void render(uint32_t width, uint32_t height, Pixel pixels[], int64_t delta) {
-    static const auto startTime = std::chrono::high_resolution_clock::now();
+struct GameState {
+    uint32_t xOffset = 0;
+};
 
-    const auto nowTime = std::chrono::high_resolution_clock::now();
-    const auto deltaTime = nowTime - startTime;
-    const auto diffSeconds =
-            (float) std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    deltaTime).count() / 1000000000.0f;
+void initGameState(void* gameStatePtr) {
+    *(GameState*) gameStatePtr = GameState{};
+}
 
+bool update(void* gameStatePtr, Input input) {
+    auto gameState = (GameState*) gameStatePtr;
+    gameState->xOffset = input.mouseX;
+    return !input.closeRequested;
+}
+
+void render(void* gameStatePtr, uint32_t width, uint32_t height, Pixel pixels[],
+        float t) {
+    auto gameState = (GameState*) gameStatePtr;
     auto* row = (uint8_t*) pixels;
     for (uint32_t y = 0; y < height; y++) {
         auto* pixel = (uint32_t*) row;
         for (uint32_t x = 0; x < width; x++) {
-            uint8_t blue = x + (uint32_t) (diffSeconds * 100);
+            uint8_t blue = x - gameState->xOffset;
             uint8_t green = y;
             *pixel++ = ((green << 8) | blue);
         }
@@ -22,7 +31,8 @@ void render(uint32_t width, uint32_t height, Pixel pixels[], int64_t delta) {
     }
 }
 
-void writeSound(size_t sampleCount, Sample samples[]) {
+void writeSound(size_t sampleCount, SoundSample samples[], void* gameStatePtr) {
+//    auto gameState = (GameState*) gameStatePtr;
     static uint64_t counter = 0;
 
     const float pi = 3.1416f;
@@ -32,7 +42,7 @@ void writeSound(size_t sampleCount, Sample samples[]) {
 
     for (size_t i = 1; i < sampleCount; i += 2, counter++) {
         const float t = fmodf((float) counter, period) / period;
-        samples[i - 1] = samples[i] = (Sample) (
+        samples[i - 1] = samples[i] = (SoundSample) (
                 sinf(t * 2.0f * pi) * (maxVolume / 2.0f)
         );
     }
