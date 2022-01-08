@@ -33,17 +33,20 @@ void render(void* gameStatePtr, uint32_t width, uint32_t height, Pixel pixels[],
 
 void writeSound(void* gameStatePtr, size_t sampleCount, SoundSample samples[]) {
 //    auto gameState = (GameState*) gameStatePtr;
-    static uint64_t counter = 0;
+    static float t = 0.0f;
 
-    const float pi = 3.1416f;
+    const float pi2 = 2.0f * 3.1416f;
     const float maxVolume = 0x7fff;
     const float hz = 261.6255653005986f;
     const float period = 44100.0f / hz;
 
-    for (size_t i = 1; i < sampleCount; i += 2, counter++) {
-        const float t = fmodf((float) counter, period) / period;
+    for (size_t i = 1; i < sampleCount; i += 2) {
         samples[i - 1] = samples[i] = (SoundSample) (
-                sinf(t * 2.0f * pi) * (maxVolume / 15.0f)
+                sinf(t) * (maxVolume / 15.0f)
         );
+        t += pi2 / period;
+        if (t >= pi2) {
+            t -= pi2;
+        }
     }
 }

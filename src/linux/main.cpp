@@ -4,9 +4,10 @@
 #include "../platform.h"
 
 #include <cstdlib>
+#include <unistd.h>
 
 int main() {
-    void* gameState = malloc(1024 * 1024 * 8); // 8 MiB
+    void* gameState = malloc((1LL << 20) * 8); // 8 MiB
     initGameState(gameState);
     PulseAudio* pa = initPulseAudio(&writeSound, gameState);
     XCB* xcb = initXCB("game");
@@ -35,6 +36,8 @@ int main() {
         render(gameState, graphics.width, graphics.height, graphics.pixels,
                 tTime);
         updateXCBGraphics(xcb);
+        // Sleep for 5ms.
+        usleep(1000 * 5);
     }
 
     destroyXCB(xcb);

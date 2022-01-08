@@ -17,8 +17,8 @@ const xcb_button_t BTN_RIGHT = 3;
 const xcb_button_t BTN_SCROLL_UP = 4;
 const xcb_button_t BTN_SCROLL_DOWN = 5;
 
-const uint16_t defaultWindowWidth = 1024;
-const uint16_t defaultWindowHeight = 720;
+const uint16_t initialWidth = 1024;
+const uint16_t initialHeight = 720;
 
 struct XCB {
     xcb_connection_t* conn;
@@ -49,7 +49,7 @@ XCB* initXCB(const char* title) {
         };
         xcb_create_window(conn, XCB_COPY_FROM_PARENT, window, screen->root, 0,
                 0,
-                defaultWindowWidth, defaultWindowHeight, 0,
+                initialWidth, initialHeight, 0,
                 XCB_WINDOW_CLASS_INPUT_OUTPUT,
                 screen->root_visual, mask, maskValues);
         xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window,
@@ -86,11 +86,11 @@ XCB* initXCB(const char* title) {
     }
 
     const xcb_pixmap_t pixmap = xcb_generate_id(conn);
-    xcb_create_pixmap(conn, 24, pixmap, window, defaultWindowWidth,
-            defaultWindowHeight);
+    xcb_create_pixmap(conn, 24, pixmap, window, initialWidth,
+            initialHeight);
 
     const size_t pixelsSize =
-            defaultWindowWidth * defaultWindowHeight * sizeof(Pixel);
+            initialWidth * initialHeight * sizeof(Pixel);
     auto pixels = (Pixel*) malloc(pixelsSize);
 
     return new XCB{
@@ -103,8 +103,8 @@ XCB* initXCB(const char* title) {
             .pixmap = pixmap,
             .pixelsSize = pixelsSize,
             .pixels = pixels,
-            .width = defaultWindowWidth,
-            .height = defaultWindowHeight,
+            .width = initialWidth,
+            .height = initialHeight,
     };
 }
 

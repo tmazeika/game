@@ -5,7 +5,7 @@
 
 union Pixel {
     struct {
-        // little endian only
+        // Little endian only.
         uint8_t blue;
         uint8_t green;
         uint8_t red;
