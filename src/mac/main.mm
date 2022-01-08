@@ -80,8 +80,8 @@ int main(int argc, const char* argv[]) {
                                           inMode:NSDefaultRunLoopMode
                                          dequeue:YES];
             switch ([event type]) {
-            default:
-                [NSApp sendEvent:event];
+                default:
+                    [NSApp sendEvent:event];
             }
         } while (event != nil);
     }

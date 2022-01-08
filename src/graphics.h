@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+const double S_PER_UPDATE = 1.0 / 60.0;
+
 union Pixel {
     struct {
         // Little endian only.

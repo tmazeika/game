@@ -6,19 +6,19 @@ struct GameState {
     uint32_t xOffset = 0;
 };
 
-void initGameState(void* gameStatePtr) {
-    *(GameState*) gameStatePtr = GameState{};
+void initGameState(void* pGameState) {
+    *(GameState*) pGameState = GameState{};
 }
 
-bool update(void* gameStatePtr, Input input) {
-    auto gameState = (GameState*) gameStatePtr;
+bool update(void* pGameState, Input input) {
+    auto gameState = (GameState*) pGameState;
     gameState->xOffset = input.mouseX;
     return !input.closeRequested;
 }
 
-void render(void* gameStatePtr, uint32_t width, uint32_t height, Pixel pixels[],
+void render(void* pGameState, uint32_t width, uint32_t height, Pixel pixels[],
         float t) {
-    auto gameState = (GameState*) gameStatePtr;
+    auto gameState = (GameState*) pGameState;
     auto* row = (uint8_t*) pixels;
     for (uint32_t y = 0; y < height; y++) {
         auto* pixel = (uint32_t*) row;
@@ -31,7 +31,7 @@ void render(void* gameStatePtr, uint32_t width, uint32_t height, Pixel pixels[],
     }
 }
 
-void writeSound(void* gameStatePtr, size_t sampleCount, SoundSample samples[]) {
+void writeSound(void* pGameState, size_t sampleCount, SoundSample samples[]) {
 //    auto gameState = (GameState*) gameStatePtr;
     static float t = 0.0f;
 

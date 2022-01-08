@@ -8,15 +8,50 @@
 #include "input.h"
 #include "sound.h"
 
-const double S_PER_UPDATE = 1.0 / 60.0;
+#ifdef __GNUC__
+#define EXPORT extern "C"
+#else
+// TODO(tmazeika): Support other compilers.
+#endif
 
-void initGameState(void* gameState);
+#define INIT_GAME_STATE(name) void name(void* gameState)
 
-bool update(void* gameState, Input input);
+typedef INIT_GAME_STATE((*InitGameState));
 
-void render(void* gameState, uint32_t width, uint32_t height, Pixel pixels[],
-        float t);
+#define UPDATE(name) bool name(void* gameState, Input input)
 
-void writeSound(void* gameState, size_t sampleCount, SoundSample samples[]);
+typedef UPDATE((*Update));
+
+UPDATE(updateStub) {
+    return true;
+}
+
+#define RENDER(name) void name(void* gameState, uint32_t width, \
+    uint32_t height, Pixel pixels[], float t)
+
+typedef RENDER((*Render));
+
+RENDER(renderStub) {
+    //
+}
+
+#define WRITE_SOUND(name) void name(void* gameState, size_t sampleCount, \
+    SoundSample samples[])
+
+typedef WRITE_SOUND((*WriteSound));
+
+WRITE_SOUND(writeSoundStub) {
+    for (size_t i = 0; i < sampleCount; i++) {
+        samples[0] = 0;
+    }
+}
+
+EXPORT INIT_GAME_STATE(initGameState);
+
+EXPORT UPDATE(update);
+
+EXPORT RENDER(render);
+
+EXPORT WRITE_SOUND(writeSound);
 
 #endif
