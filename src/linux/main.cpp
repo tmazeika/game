@@ -9,6 +9,7 @@
 
 const char* GAME_LIB_SO = "build/linux_game_debug.so";
 const double S_PER_HOT_RELOAD = 2.0;
+const __useconds_t U_SLEEP = 1000 * 5; // 5ms
 
 struct GameLib {
     void* lib;
@@ -76,8 +77,7 @@ int main() {
         gameLib.render(gameState, graphics.width, graphics.height,
                 graphics.pixels, tTime);
         updateXCBGraphics(xcb);
-        // Sleep for 5ms.
-        usleep(1000 * 5);
+        usleep(U_SLEEP);
     }
 
     destroyXCB(xcb);
