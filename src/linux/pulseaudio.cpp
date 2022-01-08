@@ -3,8 +3,8 @@
 #include <pulse/pulseaudio.h>
 
 struct PulseAudio {
-    PulseAudioWriteCb writeCb;
     void* userdata;
+    PulseAudioWriteCb writeCb;
     pa_threaded_mainloop* mainloop;
     pa_context* ctx;
 };
@@ -21,7 +21,7 @@ void streamWriteCb(pa_stream* stream, size_t fillSize, void* paPtr) {
     SoundSample* buf = nullptr;
     pa_stream_begin_write(stream, (void**) &buf, &fillSize);
     auto pa = (PulseAudio*) paPtr;
-    pa->writeCb(fillSize / sizeof(SoundSample), buf, pa->userdata);
+    pa->writeCb(pa->userdata, fillSize / sizeof(SoundSample), buf);
     pa_stream_write(stream, buf, fillSize, nullptr, 0, PA_SEEK_RELATIVE);
 }
 
@@ -30,8 +30,8 @@ PulseAudio* initPulseAudio(PulseAudioWriteCb writeCb, void* userdata) {
     pa_mainloop_api* mainloopApi = pa_threaded_mainloop_get_api(mainloop);
     pa_context* ctx = pa_context_new(mainloopApi, "game");
     auto pa = new PulseAudio{
-            .writeCb = writeCb,
             .userdata = userdata,
+            .writeCb = writeCb,
             .mainloop = mainloop,
             .ctx = ctx,
     };

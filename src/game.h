@@ -10,13 +10,13 @@
 
 const double S_PER_UPDATE = 1.0 / 60.0;
 
-void initGameState(void* gameStatePtr);
+void initGameState(void* gameState);
 
-bool update(void* gameStatePtr, Input input);
+bool update(void* gameState, Input input);
 
-void render(void* gameStatePtr, uint32_t width, uint32_t height, Pixel pixels[],
-        float delta);
+void render(void* gameState, uint32_t width, uint32_t height, Pixel pixels[],
+        float t);
 
-void writeSound(size_t sampleCount, SoundSample samples[], void* gameState);
+void writeSound(void* gameState, size_t sampleCount, SoundSample samples[]);
 
 #endif

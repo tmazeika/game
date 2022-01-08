@@ -7,8 +7,7 @@
 
 struct PulseAudio;
 
-typedef void (* PulseAudioWriteCb)(size_t sampleCount, SoundSample samples[],
-        void* userdata);
+typedef void (* PulseAudioWriteCb)(void* userdata, size_t sampleCount, SoundSample samples[]);
 
 PulseAudio* initPulseAudio(PulseAudioWriteCb writeCb, void* userdata);
 

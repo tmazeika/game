@@ -31,7 +31,7 @@ void render(void* gameStatePtr, uint32_t width, uint32_t height, Pixel pixels[],
     }
 }
 
-void writeSound(size_t sampleCount, SoundSample samples[], void* gameStatePtr) {
+void writeSound(void* gameStatePtr, size_t sampleCount, SoundSample samples[]) {
 //    auto gameState = (GameState*) gameStatePtr;
     static uint64_t counter = 0;
 
@@ -43,7 +43,7 @@ void writeSound(size_t sampleCount, SoundSample samples[], void* gameStatePtr) {
     for (size_t i = 1; i < sampleCount; i += 2, counter++) {
         const float t = fmodf((float) counter, period) / period;
         samples[i - 1] = samples[i] = (SoundSample) (
-                sinf(t * 2.0f * pi) * (maxVolume / 2.0f)
+                sinf(t * 2.0f * pi) * (maxVolume / 15.0f)
         );
     }
 }
