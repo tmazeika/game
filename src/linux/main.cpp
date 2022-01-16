@@ -6,9 +6,9 @@
 #include <cstdlib>
 #include <dlfcn.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 const char* GAME_LIB_SO = "build/linux_game_debug.so";
-const double S_PER_HOT_RELOAD = 2.0;
 const __useconds_t U_SLEEP = 1000 * 5; // 5ms
 
 struct GameLib {
@@ -30,6 +30,12 @@ GameLib loadGameLib() {
     };
 }
 
+double getLastGameLibModTime() {
+    struct stat res{};
+    stat(GAME_LIB_SO, &res);
+    return (double) res.st_mtim.tv_sec + (double) res.st_mtim.tv_nsec / 1000000000.0;
+}
+
 void unloadGameLib(GameLib* gameLib) {
     gameLib->update = &updateStub;
     gameLib->render = &renderStub;
@@ -39,6 +45,7 @@ void unloadGameLib(GameLib* gameLib) {
 
 int main() {
     void* gameState = malloc((1LL << 20) * 8); // 8 MiB
+    double prevGameLibModTime = getLastGameLibModTime();
     GameLib gameLib = loadGameLib();
 
     gameLib.initGameState(gameState);
@@ -48,17 +55,16 @@ int main() {
     bool running = true;
     double prevTime = getTime();
     double lagTime = 0.0;
-    double hotReloadTime = 0.0;
 
     while (running) {
         const double curTime = getTime();
         const double deltaTime = curTime - prevTime;
         prevTime = curTime;
         lagTime += deltaTime;
-        hotReloadTime += deltaTime;
 
-        if (hotReloadTime >= S_PER_HOT_RELOAD) {
-            hotReloadTime -= S_PER_HOT_RELOAD;
+        double lastGameLibModTime = getLastGameLibModTime();
+        if (lastGameLibModTime > prevGameLibModTime) {
+            prevGameLibModTime = lastGameLibModTime;
             unloadGameLib(&gameLib);
             gameLib = loadGameLib();
         }
