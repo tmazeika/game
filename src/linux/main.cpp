@@ -6,7 +6,9 @@
 #include <cstdlib>
 #include <dlfcn.h>
 #include <unistd.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
+#include <cassert>
 
 const char* GAME_LIB_SO = "build/linux_game_debug.so";
 const __useconds_t U_SLEEP = 1000 * 5; // 5ms
@@ -32,8 +34,9 @@ GameLib loadGameLib() {
 
 double getLastGameLibModTime() {
     struct stat res{};
-    stat(GAME_LIB_SO, &res);
-    return (double) res.st_mtim.tv_sec + (double) res.st_mtim.tv_nsec / 1000000000.0;
+    assert(stat(GAME_LIB_SO, &res) == 0);
+    return (double) res.st_mtim.tv_sec +
+           (double) res.st_mtim.tv_nsec / 1000000000.0;
 }
 
 void unloadGameLib(GameLib* gameLib) {
@@ -44,7 +47,13 @@ void unloadGameLib(GameLib* gameLib) {
 }
 
 int main() {
-    void* gameState = malloc((1LL << 20) * 8); // 8 MiB
+    void* gameStateBaseAddr = (void*) ((1LL << 45) * 2); // Address at 32 TiB.
+    const size_t gameStateSize = (1LL << 20) * 8; // 8 MiB.
+    void* gameState = mmap(gameStateBaseAddr, gameStateSize,
+            PROT_READ | PROT_WRITE,
+            MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED_NOREPLACE, -1, 0);
+    assert(gameState == gameStateBaseAddr);
+
     double prevGameLibModTime = getLastGameLibModTime();
     GameLib gameLib = loadGameLib();
 

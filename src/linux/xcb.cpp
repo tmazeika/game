@@ -1,10 +1,10 @@
 #include "xcb.h"
+#include "../utils.h"
 
 #include <cassert>
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <xcb/xcb.h>
 #include <xcb/xcb_image.h>
 
@@ -17,8 +17,8 @@ const xcb_button_t BTN_RIGHT = 3;
 const xcb_button_t BTN_SCROLL_UP = 4;
 const xcb_button_t BTN_SCROLL_DOWN = 5;
 
-const uint16_t initialWidth = 1024;
-const uint16_t initialHeight = 720;
+const uint16_t initialWidth = 1920;
+const uint16_t initialHeight = 1080;
 
 struct XCB {
     xcb_connection_t* conn;
@@ -53,8 +53,11 @@ XCB* initXCB(const char* title) {
                 XCB_WINDOW_CLASS_INPUT_OUTPUT,
                 screen->root_visual, mask, maskValues);
         xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window,
-                XCB_ATOM_WM_NAME, XCB_ATOM_STRING, sizeof(char) * 8,
-                strlen(title), title);
+                XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
+                getStringLength(title), title);
+        xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window,
+                XCB_ATOM_WM_TRANSIENT_FOR, XCB_ATOM_WINDOW, 32,
+                sizeof(window), &window);
         xcb_map_window(conn, window);
         xcb_flush(conn);
     }

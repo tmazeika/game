@@ -8,6 +8,7 @@ build/linux_game_debug.so: build/
 
 build/linux_debug: build/ build/linux_game_debug.so
 	gcc -Wall -g -o build/linux_debug \
+		src/utils.cpp \
 		src/linux/platform.cpp \
 		src/linux/pulseaudio.cpp \
 		src/linux/xcb.cpp \

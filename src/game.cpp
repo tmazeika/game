@@ -36,7 +36,8 @@ void writeSound(void* pGameState, size_t sampleCount, SoundSample samples[]) {
     static float t = 0.0f;
 
     const float pi2 = 2.0f * 3.1416f;
-    const float maxVolume = 0x7fff;
+    const float maxVolume = 0; // Muted for now...
+//    const float maxVolume = 0x7fff;
     const float hz = 261.6255653005986f;
     const float period = 44100.0f / hz;
 
