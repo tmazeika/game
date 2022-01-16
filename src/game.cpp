@@ -1,9 +1,15 @@
 #include "game.h"
+#include "platform.h"
 
 #include <cmath>
+#include <cstdio>
 
 struct GameState {
     uint32_t xOffset = 0;
+
+    bool recording = false;
+    bool playingBack = false;
+    File playbackFile = nullptr;
 };
 
 void initGameState(void* pGameState) {
@@ -12,8 +18,41 @@ void initGameState(void* pGameState) {
 
 bool update(void* pGameState, Input input) {
     auto gameState = (GameState*) pGameState;
+
+    if (input.closeRequested) {
+        return false;
+    }
+    if (wasEverNewlyDown(input.keyL) && !gameState->playingBack) {
+        if (gameState->recording) {
+            printf("Recording stopped. Starting infinite playback...\n");
+            closeFile(gameState->playbackFile);
+            readEntireFile("gameState.g", MAX_GAME_STATE_SIZE, gameState);
+            gameState->recording = false;
+            gameState->playingBack = true;
+            gameState->playbackFile = openFileForReading("inputs.g");
+        } else {
+            printf("Recording started.\n");
+            writeEntireFile("gameState.g", MAX_GAME_STATE_SIZE, gameState);
+            gameState->recording = true;
+            gameState->playingBack = false;
+            gameState->playbackFile = openFileForWriting("inputs.g");
+        }
+    }
+    if (gameState->recording) {
+        writeNextToFile(gameState->playbackFile, sizeof(input), &input);
+    } else if (gameState->playingBack) {
+        if (!readNextFromFile(gameState->playbackFile, sizeof(input), &input)) {
+            closeFile(gameState->playbackFile);
+            readEntireFile("gameState.g", MAX_GAME_STATE_SIZE, gameState);
+            gameState->recording = false;
+            gameState->playingBack = true;
+            gameState->playbackFile = openFileForReading("inputs.g");
+            readNextFromFile(gameState->playbackFile, sizeof(input), &input);
+        }
+    }
+
     gameState->xOffset = input.mouseX;
-    return !input.closeRequested;
+    return true;
 }
 
 void render(void* pGameState, uint32_t width, uint32_t height, Pixel pixels[],

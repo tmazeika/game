@@ -11,6 +11,7 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 const xcb_keycode_t KEY_ESC = 9;
+const xcb_keycode_t KEY_L = 46;
 const xcb_button_t BTN_LEFT = 1;
 const xcb_button_t BTN_MIDDLE = 2;
 const xcb_button_t BTN_RIGHT = 3;
@@ -44,8 +45,8 @@ XCB* initXCB(const char* title) {
         uint32_t maskValues[] = {
                 screen->black_pixel,
                 XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_KEY_PRESS |
-                XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                XCB_EVENT_MASK_POINTER_MOTION,
+                XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS |
+                XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION,
         };
         xcb_create_window(conn, XCB_COPY_FROM_PARENT, window, screen->root, 0,
                 0,
@@ -114,6 +115,10 @@ XCB* initXCB(const char* title) {
 Input pollXCBEvents(XCB* xcb) {
     uint16_t prevWidth = xcb->width, prevHeight = xcb->height;
     Input curInput = xcb->prevInput;
+
+    // Reset transitions.
+    curInput.btnLeft.transitions = curInput.keyL.transitions = 0;
+
     while (xcb_generic_event_t* event = xcb_poll_for_event(xcb->conn)) {
         switch (event->response_type & ~0x80) {
             case 0: {
@@ -136,22 +141,32 @@ Input pollXCBEvents(XCB* xcb) {
             }
             case XCB_KEY_PRESS: {
                 auto kpEvent = (xcb_key_press_event_t*) event;
+                // DEBUG: printf("Key press: %d\n", kpEvent->detail);
                 if (kpEvent->detail == KEY_ESC) {
                     curInput.closeRequested = true;
+                } else if (kpEvent->detail == KEY_L) {
+                    onDown(&curInput.keyL, true);
+                }
+                break;
+            }
+            case XCB_KEY_RELEASE: {
+                auto krEvent = (xcb_key_release_event_t*) event;
+                if (krEvent->detail == KEY_L) {
+                    onDown(&curInput.keyL, false);
                 }
                 break;
             }
             case XCB_BUTTON_PRESS: {
                 auto bpEvent = (xcb_button_press_event_t*) event;
                 if (bpEvent->detail == BTN_LEFT) {
-                    curInput.leftBtnDown = true;
+                    onDown(&curInput.btnLeft, true);
                 }
                 break;
             }
             case XCB_BUTTON_RELEASE: {
                 auto brEvent = (xcb_button_release_event_t*) event;
                 if (brEvent->detail == BTN_LEFT) {
-                    curInput.leftBtnDown = false;
+                    onDown(&curInput.btnLeft, false);
                 }
                 break;
             }
