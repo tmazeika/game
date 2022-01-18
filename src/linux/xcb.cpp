@@ -41,24 +41,24 @@ XCB* initXCB(const char* title) {
     xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
     xcb_window_t window = xcb_generate_id(conn);
     {
-        uint32_t mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-        uint32_t maskValues[] = {
-                screen->black_pixel,
-                XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_KEY_PRESS |
-                XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS |
-                XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION,
+        const uint32_t mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+        const uint32_t maskValues[] = {
+            screen->black_pixel,
+            XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_KEY_PRESS |
+            XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS |
+            XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION,
         };
         xcb_create_window(conn, XCB_COPY_FROM_PARENT, window, screen->root, 0,
-                0,
-                initialWidth, initialHeight, 0,
-                XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                screen->root_visual, mask, maskValues);
+            0,
+            initialWidth, initialHeight, 0,
+            XCB_WINDOW_CLASS_INPUT_OUTPUT,
+            screen->root_visual, mask, maskValues);
         xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window,
-                XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
-                getStringLength(title), title);
+            XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
+            getStringLength(title), title);
         xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window,
-                XCB_ATOM_WM_TRANSIENT_FOR, XCB_ATOM_WINDOW, 32,
-                sizeof(window), &window);
+            XCB_ATOM_WM_TRANSIENT_FOR, XCB_ATOM_WINDOW, 32,
+            sizeof(window), &window);
         xcb_map_window(conn, window);
         xcb_flush(conn);
     }
@@ -67,16 +67,16 @@ XCB* initXCB(const char* title) {
     xcb_atom_t deleteWindowAtom;
     {
         xcb_intern_atom_cookie_t protocolsCookie = xcb_intern_atom(conn, 1, 12,
-                "WM_PROTOCOLS");
+            "WM_PROTOCOLS");
         xcb_intern_atom_cookie_t deleteWindowCookie = xcb_intern_atom(conn, 0,
-                16, "WM_DELETE_WINDOW");
+            16, "WM_DELETE_WINDOW");
         xcb_intern_atom_reply_t* protocolsReply = xcb_intern_atom_reply(conn,
-                protocolsCookie, nullptr);
+            protocolsCookie, nullptr);
         xcb_intern_atom_reply_t* deleteWindowReply = xcb_intern_atom_reply(conn,
-                deleteWindowCookie, nullptr);
+            deleteWindowCookie, nullptr);
         xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window,
-                protocolsReply->atom, XCB_ATOM_ATOM, 32, 1,
-                &deleteWindowReply->atom);
+            protocolsReply->atom, XCB_ATOM_ATOM, 32, 1,
+            &deleteWindowReply->atom);
         deleteWindowAtom = deleteWindowReply->atom;
         free(deleteWindowReply);
         free(protocolsReply);
@@ -91,33 +91,36 @@ XCB* initXCB(const char* title) {
 
     const xcb_pixmap_t pixmap = xcb_generate_id(conn);
     xcb_create_pixmap(conn, 24, pixmap, window, initialWidth,
-            initialHeight);
+        initialHeight);
 
     const size_t pixelsSize =
             initialWidth * initialHeight * sizeof(Pixel);
     auto pixels = (Pixel*) malloc(pixelsSize);
 
     return new XCB{
-            .conn = conn,
-            .window = window,
-            .maxPixelsSizePerPut = maxRequestSize -
-                                   sizeof(xcb_put_image_request_t),
-            .deleteWindowAtom = deleteWindowAtom,
-            .gc = gc,
-            .pixmap = pixmap,
-            .pixelsSize = pixelsSize,
-            .pixels = pixels,
-            .width = initialWidth,
-            .height = initialHeight,
+        .conn = conn,
+        .window = window,
+        .maxPixelsSizePerPut = maxRequestSize -
+                               sizeof(xcb_put_image_request_t),
+        .deleteWindowAtom = deleteWindowAtom,
+        .gc = gc,
+        .pixmap = pixmap,
+        .pixelsSize = pixelsSize,
+        .pixels = pixels,
+        .width = initialWidth,
+        .height = initialHeight,
     };
 }
 
 Input pollXCBEvents(XCB* xcb) {
-    uint16_t prevWidth = xcb->width, prevHeight = xcb->height;
+    const uint16_t prevWidth = xcb->width, prevHeight = xcb->height;
     Input curInput = xcb->prevInput;
 
     // Reset transitions.
-    curInput.btnLeft.transitions = curInput.keyL.transitions = 0;
+    curInput.btnLeft.transitions = 0;
+    curInput.btnMiddle.transitions = 0;
+    curInput.btnRight.transitions = 0;
+    curInput.keyL.transitions = 0;
 
     while (xcb_generic_event_t* event = xcb_poll_for_event(xcb->conn)) {
         switch (event->response_type & ~0x80) {
@@ -161,12 +164,24 @@ Input pollXCBEvents(XCB* xcb) {
                 if (bpEvent->detail == BTN_LEFT) {
                     onDown(&curInput.btnLeft, true);
                 }
+                if (bpEvent->detail == BTN_MIDDLE) {
+                    onDown(&curInput.btnMiddle, true);
+                }
+                if (bpEvent->detail == BTN_RIGHT) {
+                    onDown(&curInput.btnRight, true);
+                }
                 break;
             }
             case XCB_BUTTON_RELEASE: {
                 auto brEvent = (xcb_button_release_event_t*) event;
                 if (brEvent->detail == BTN_LEFT) {
                     onDown(&curInput.btnLeft, false);
+                }
+                if (brEvent->detail == BTN_MIDDLE) {
+                    onDown(&curInput.btnMiddle, false);
+                }
+                if (brEvent->detail == BTN_RIGHT) {
+                    onDown(&curInput.btnRight, false);
                 }
                 break;
             }
@@ -188,23 +203,23 @@ Input pollXCBEvents(XCB* xcb) {
         xcb_free_pixmap(xcb->conn, xcb->pixmap);
         xcb->pixmap = xcb_generate_id(xcb->conn);
         xcb_create_pixmap(xcb->conn, 24, xcb->pixmap, xcb->window, xcb->width,
-                xcb->height);
+            xcb->height);
     }
 
     return curInput;
 }
 
-XCBGraphicsInfo getXCBGraphicsInfo(XCB* xcb) {
-    return XCBGraphicsInfo{
-            .width = xcb->width,
-            .height = xcb->height,
-            .pixels = xcb->pixels,
+Window getXCBWindow(XCB* xcb) {
+    return Window{
+        .pixels = xcb->pixels,
+        .width = xcb->width,
+        .height = xcb->height,
     };
 }
 
 void updateXCBGraphics(XCB* xcb) {
     xcb_image_t* image = xcb_image_create_native(xcb->conn, xcb->width,
-            xcb->height, XCB_IMAGE_FORMAT_Z_PIXMAP, 24, nullptr, ~0, nullptr);
+        xcb->height, XCB_IMAGE_FORMAT_Z_PIXMAP, 24, nullptr, ~0, nullptr);
     image->data = (uint8_t*) xcb->pixels;
     const size_t rowSize = xcb->width * sizeof(Pixel);
     if (xcb->pixelsSize > xcb->maxPixelsSizePerPut) {
@@ -214,18 +229,18 @@ void updateXCBGraphics(XCB* xcb) {
             // Assert that the below int16_t cast is OK.
             assert(y <= 0x7fff);
             xcb_put_image(xcb->conn, image->format, xcb->pixmap, xcb->gc,
-                    xcb->width, rows,
-                    0, (int16_t) y, 0,
-                    image->depth,
-                    rows * rowSize,
-                    &image->data[y * rowSize]);
+                xcb->width, rows,
+                0, (int16_t) y, 0,
+                image->depth,
+                rows * rowSize,
+                &image->data[y * rowSize]);
         }
     } else {
         xcb_image_put(xcb->conn, xcb->pixmap, xcb->gc, image, 0, 0, 0);
     }
     xcb_image_destroy(image);
     xcb_copy_area(xcb->conn, xcb->pixmap, xcb->window, xcb->gc, 0, 0, 0, 0,
-            xcb->width, xcb->height);
+        xcb->width, xcb->height);
     xcb_flush(xcb->conn);
 }
 

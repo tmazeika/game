@@ -11,7 +11,7 @@
 #include <cstdio>
 
 const char* GAME_LIB_SO = "build/linux_game_debug.so";
-const __useconds_t U_SLEEP = 1000 * 5; // 5ms
+const __useconds_t U_SLEEP = 1000 * 1; // 1ms
 
 struct GameLib {
     void* lib;
@@ -28,11 +28,11 @@ GameLib loadGameLib() {
     }
     assert(lib);
     return {
-            .lib = lib,
-            .initGameState = (InitGameState) dlsym(lib, "initGameState"),
-            .update = (Update) dlsym(lib, "update"),
-            .render = (Render) dlsym(lib, "render"),
-            .writeSound = (WriteSound) dlsym(lib, "writeSound"),
+        .lib = lib,
+        .initGameState = (InitGameState) dlsym(lib, "initGameState"),
+        .update = (Update) dlsym(lib, "update"),
+        .render = (Render) dlsym(lib, "render"),
+        .writeSound = (WriteSound) dlsym(lib, "writeSound"),
     };
 }
 
@@ -53,8 +53,8 @@ void unloadGameLib(GameLib* gameLib) {
 int main() {
     void* gameStateBaseAddr = (void*) ((1LL << 45) * 2); // Address at 64 TiB.
     void* gameState = mmap(gameStateBaseAddr, MAX_GAME_STATE_SIZE,
-            PROT_READ | PROT_WRITE,
-            MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED_NOREPLACE, -1, 0);
+        PROT_READ | PROT_WRITE,
+        MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED_NOREPLACE, -1, 0);
     assert(gameState == gameStateBaseAddr);
 
     double prevGameLibModTime = getLastGameLibModTime();
@@ -88,10 +88,9 @@ int main() {
         }
 
         // Render.
-        const auto graphics = getXCBGraphicsInfo(xcb);
+        const Window window = getXCBWindow(xcb);
         const auto tTime = (float) (lagTime / S_PER_UPDATE);
-        gameLib.render(gameState, graphics.width, graphics.height,
-                graphics.pixels, tTime);
+        gameLib.render(gameState, window, tTime);
         updateXCBGraphics(xcb);
         usleep(U_SLEEP);
     }

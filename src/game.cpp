@@ -5,7 +5,11 @@
 #include <cstdio>
 
 struct GameState {
-    uint32_t xOffset = 0;
+    bool btn0 = false;
+    bool btn1 = false;
+    bool btn2 = false;
+
+    int xOffset = 0;
 
     bool recording = false;
     bool playingBack = false;
@@ -51,22 +55,42 @@ bool update(void* pGameState, Input input) {
         }
     }
 
+    gameState->btn0 = input.btnLeft.currentlyDown;
+    gameState->btn1 = input.btnMiddle.currentlyDown;
+    gameState->btn2 = input.btnRight.currentlyDown;
     gameState->xOffset = input.mouseX;
     return true;
 }
 
-void render(void* pGameState, uint32_t width, uint32_t height, Pixel pixels[],
-        float t) {
-    auto gameState = (GameState*) pGameState;
-    auto* row = (uint8_t*) pixels;
-    for (uint32_t y = 0; y < height; y++) {
-        auto* pixel = (uint32_t*) row;
-        for (uint32_t x = 0; x < width; x++) {
-            uint8_t blue = x - gameState->xOffset;
-            uint8_t green = y;
+void drawRect(Window window, int x, int y, int width, int height) {
+    const int x2 = x + width, y2 = y + height;
+    for (int x1 = x; x1 < x2; x1++) {
+        for (int y1 = y; y1 < y2; y1++) {
+            setPixel(window, x1, y1, {.rgb = 0xffffffff});
+        }
+    }
+}
+
+void render(void* pGameState, Window window, float t) {
+    const GameState gameState = *(GameState*) pGameState;
+    auto row = (uint8_t*) window.pixels;
+    for (int y = 0; y < window.height; y++) {
+        auto pixel = (int*) row;
+        for (int x = 0; x < window.width; x++) {
+            const uint8_t blue = x - gameState.xOffset;
+            const uint8_t green = y;
             *pixel++ = ((green << 8) | blue);
         }
-        row += width * sizeof(Pixel);
+        row += window.width * sizeof(Pixel);
+    }
+    if (gameState.btn0) {
+        drawRect(window, 10, 10, 10, 10);
+    }
+    if (gameState.btn1) {
+        drawRect(window, 30, 10, 10, 10);
+    }
+    if (gameState.btn2) {
+        drawRect(window, 50, 10, 10, 10);
     }
 }
 
@@ -82,7 +106,7 @@ void writeSound(void* pGameState, size_t sampleCount, SoundSample samples[]) {
 
     for (size_t i = 1; i < sampleCount; i += 2) {
         samples[i - 1] = samples[i] = (SoundSample) (
-                sinf(t) * (maxVolume / 15.0f)
+            sinf(t) * (maxVolume / 15.0f)
         );
         t += pi2 / period;
         if (t >= pi2) {

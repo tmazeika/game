@@ -18,14 +18,14 @@ static uint8_t* buffer = nil;
 
 int main(int argc, const char* argv[]) {
     NSWindow* window = [[NSWindow alloc]
-            initWithContentRect:NSMakeRect(0, 0, 512, 512)
-                      styleMask:
-                              NSWindowStyleMaskClosable |
-                              NSWindowStyleMaskMiniaturizable |
-                              NSWindowStyleMaskResizable |
-                              NSWindowStyleMaskTitled
-                        backing:NSBackingStoreBuffered
-                          defer:NO];
+        initWithContentRect:NSMakeRect(0, 0, 512, 512)
+                  styleMask:
+                      NSWindowStyleMaskClosable |
+                      NSWindowStyleMaskMiniaturizable |
+                      NSWindowStyleMaskResizable |
+                      NSWindowStyleMaskTitled
+                    backing:NSBackingStoreBuffered
+                      defer:NO];
     [window setTitle:@"game"];
     [window center];
     [window makeKeyAndOrderFront:nil];
@@ -53,20 +53,20 @@ int main(int argc, const char* argv[]) {
         }
         @autoreleasepool {
             NSBitmapImageRep* imageRep = [[[NSBitmapImageRep alloc]
-                    initWithBitmapDataPlanes:&buffer
-                                  pixelsWide:bitmapWidth
-                                  pixelsHigh:bitmapHeight
-                               bitsPerSample:8
-                             samplesPerPixel:4
-                                    hasAlpha:YES
-                                    isPlanar:NO
-                              colorSpaceName:NSDeviceRGBColorSpace
-                                 bytesPerRow:pitch
-                                bitsPerPixel:bytesPerPixel * 8
+                initWithBitmapDataPlanes:&buffer
+                              pixelsWide:bitmapWidth
+                              pixelsHigh:bitmapHeight
+                           bitsPerSample:8
+                         samplesPerPixel:4
+                                hasAlpha:YES
+                                isPlanar:NO
+                          colorSpaceName:NSDeviceRGBColorSpace
+                             bytesPerRow:pitch
+                            bitsPerPixel:bytesPerPixel * 8
             ] autorelease];
             NSSize imageSize = NSMakeSize(bitmapWidth, bitmapHeight);
             NSImage* image = [[[NSImage alloc]
-                    initWithSize:imageSize
+                initWithSize:imageSize
             ] autorelease];
             [image addRepresentation:imageRep];
             window.contentView.layer.contents = image;

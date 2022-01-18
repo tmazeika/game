@@ -29,7 +29,7 @@ bool readNextFromFile(File file, size_t bytes, void *dest) {
     return items == 1;
 }
 
-void writeNextToFile(File file, size_t bytes, void *src) {
+void writeNextToFile(File file, size_t bytes, void* src) {
     fwrite(src, bytes, 1, (FILE*) file);
     assert(ferror((FILE*) file) == 0);
 }
@@ -38,7 +38,7 @@ void closeFile(File file) {
     assert(fclose((FILE*) file) == 0);
 }
 
-void readEntireFile(const char* filename, size_t maxBytes, void *dataDest) {
+void readEntireFile(const char* filename, size_t maxBytes, void* dataDest) {
     FILE* file = fopen(filename, "r");
     assert(file);
     struct stat info{};
@@ -51,7 +51,7 @@ void readEntireFile(const char* filename, size_t maxBytes, void *dataDest) {
 }
 
 void writeEntireFile(const char* filename, size_t bytes, void* dataSrc) {
-    FILE *file = fopen(filename, "w");
+    FILE* file = fopen(filename, "w");
     assert(file);
     fwrite(dataSrc, bytes, 1, file);
     assert(ferror(file) == 0);

@@ -26,8 +26,7 @@ UPDATE(updateStub) {
     return true;
 }
 
-#define RENDER(name) void name(void* gameState, uint32_t width, \
-    uint32_t height, Pixel pixels[], float t)
+#define RENDER(name) void name(void* gameState, Window window, float t)
 
 typedef RENDER((*Render));
 

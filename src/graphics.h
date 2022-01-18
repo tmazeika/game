@@ -15,4 +15,12 @@ union Pixel {
     uint32_t rgb;
 };
 
+struct Window {
+    Pixel* pixels;
+    int width;
+    int height;
+};
+
+void setPixel(Window window, int x, int y, Pixel pixel);
+
 #endif

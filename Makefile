@@ -6,6 +6,7 @@ build/:
 build/linux_game_debug.so: build/
 	gcc -Wall -g -shared -fpic -o build/linux_game_debug.so.tmp \
 		src/linux/platform.cpp \
+		src/graphics.cpp \
 		src/input.cpp \
 		src/game.cpp
 	@# We use mv instead of outputting to the file directly so that we can support hot reloading... otherwise, dlopen

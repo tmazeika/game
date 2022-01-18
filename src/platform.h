@@ -18,13 +18,13 @@ File openFileForReading(const char* filename);
 
 File openFileForWriting(const char* filename);
 
-bool readNextFromFile(File file, size_t bytes, void *dest);
+bool readNextFromFile(File file, size_t bytes, void* dest);
 
-void writeNextToFile(File file, size_t bytes, void *src);
+void writeNextToFile(File file, size_t bytes, void* src);
 
 void closeFile(File file);
 
-void readEntireFile(const char* filename, size_t maxBytes, void *dataDest);
+void readEntireFile(const char* filename, size_t maxBytes, void* dataDest);
 
 void writeEntireFile(const char* filename, size_t bytes, void* dataSrc);
 

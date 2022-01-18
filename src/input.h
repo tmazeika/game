@@ -29,10 +29,12 @@ bool wasEverNewlyDown(InputDown inputDown);
 struct Input {
     bool closeRequested;
 
-    uint32_t mouseX;
-    uint32_t mouseY;
+    int mouseX;
+    int mouseY;
 
     InputDown btnLeft;
+    InputDown btnMiddle;
+    InputDown btnRight;
     InputDown keyL;
 };
 
