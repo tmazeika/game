@@ -12,6 +12,10 @@
 
 const xcb_keycode_t KEY_ESC = 9;
 const xcb_keycode_t KEY_L = 46;
+const xcb_button_t KEY_W = 25;
+const xcb_button_t KEY_A = 38;
+const xcb_button_t KEY_S = 39;
+const xcb_button_t KEY_D = 40;
 const xcb_button_t BTN_LEFT = 1;
 const xcb_button_t BTN_MIDDLE = 2;
 const xcb_button_t BTN_RIGHT = 3;
@@ -94,7 +98,7 @@ XCB* initXCB(const char* title) {
         initialHeight);
 
     const size_t pixelsSize =
-            initialWidth * initialHeight * sizeof(Pixel);
+        initialWidth * initialHeight * sizeof(Pixel);
     auto pixels = (Pixel*) malloc(pixelsSize);
 
     return new XCB{
@@ -121,6 +125,10 @@ Input pollXCBEvents(XCB* xcb) {
     curInput.btnMiddle.transitions = 0;
     curInput.btnRight.transitions = 0;
     curInput.keyL.transitions = 0;
+    curInput.keyW.transitions = 0;
+    curInput.keyA.transitions = 0;
+    curInput.keyS.transitions = 0;
+    curInput.keyD.transitions = 0;
 
     while (xcb_generic_event_t* event = xcb_poll_for_event(xcb->conn)) {
         switch (event->response_type & ~0x80) {
@@ -149,6 +157,14 @@ Input pollXCBEvents(XCB* xcb) {
                     curInput.closeRequested = true;
                 } else if (kpEvent->detail == KEY_L) {
                     onDown(&curInput.keyL, true);
+                } else if (kpEvent->detail == KEY_W) {
+                    onDown(&curInput.keyW, true);
+                } else if (kpEvent->detail == KEY_A) {
+                    onDown(&curInput.keyA, true);
+                } else if (kpEvent->detail == KEY_S) {
+                    onDown(&curInput.keyS, true);
+                } else if (kpEvent->detail == KEY_D) {
+                    onDown(&curInput.keyD, true);
                 }
                 break;
             }
@@ -156,6 +172,14 @@ Input pollXCBEvents(XCB* xcb) {
                 auto krEvent = (xcb_key_release_event_t*) event;
                 if (krEvent->detail == KEY_L) {
                     onDown(&curInput.keyL, false);
+                } else if (krEvent->detail == KEY_W) {
+                    onDown(&curInput.keyW, false);
+                } else if (krEvent->detail == KEY_A) {
+                    onDown(&curInput.keyA, false);
+                } else if (krEvent->detail == KEY_S) {
+                    onDown(&curInput.keyS, false);
+                } else if (krEvent->detail == KEY_D) {
+                    onDown(&curInput.keyD, false);
                 }
                 break;
             }

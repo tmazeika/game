@@ -36,6 +36,10 @@ struct Input {
     InputDown btnMiddle;
     InputDown btnRight;
     InputDown keyL;
+    InputDown keyW;
+    InputDown keyA;
+    InputDown keyS;
+    InputDown keyD;
 };
 
 #endif

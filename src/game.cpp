@@ -4,94 +4,224 @@
 #include <cmath>
 #include <cstdio>
 
-struct GameState {
-    bool btn0 = false;
-    bool btn1 = false;
-    bool btn2 = false;
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
 
-    int xOffset = 0;
+struct GameState {
+    int tileMapX = 0;
+    int tileMapY = 0;
+    float playerX = 100;
+    float playerY = 100;
+
+    int tileMap00[9][16] = {
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0},
+        {1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+    };
+    int tileMap10[9][16] = {
+        {1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1},
+        {1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0},
+        {1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1},
+        {1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+    };
+    int tileMap01[9][16] = {
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    };
+    int tileMap11[9][16] = {
+        {1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+    };
+    int* currentTileMap;
+    int* tileMaps[2][2];
 
     bool recording = false;
     bool playingBack = false;
     File playbackFile = nullptr;
 };
 
+float tileWidth = 80.0f;
+float tileHeight = 90.0f;
+
+bool isPointEscaped(GameState* gs, float x, float y) {
+    int tileX = (int) (x / tileWidth);
+    int tileY = (int) (y / tileHeight);
+    return tileX >= 16 || tileY >= 9 || tileX < 0 || tileY < 0;
+}
+
+bool isPointInTile(GameState* gs, float x, float y) {
+    int tileX = (int) (x / tileWidth);
+    int tileY = (int) (y / tileHeight);
+    return isPointEscaped(gs, x, y) ||
+           gs->currentTileMap[tileY * 16 + tileX];
+}
+
 void initGameState(void* pGameState) {
     *(GameState*) pGameState = GameState{};
+    auto gs = (GameState*) pGameState;
+    gs->currentTileMap = (int*) gs->tileMap00;
+    gs->tileMaps[0][0] = (int*) gs->tileMap00;
+    gs->tileMaps[1][0] = (int*) gs->tileMap10;
+    gs->tileMaps[0][1] = (int*) gs->tileMap01;
+    gs->tileMaps[1][1] = (int*) gs->tileMap11;
 }
 
 bool update(void* pGameState, Input input) {
-    auto gameState = (GameState*) pGameState;
+    auto gs = (GameState*) pGameState;
 
     if (input.closeRequested) {
         return false;
     }
-    if (wasEverNewlyDown(input.keyL) && !gameState->playingBack) {
-        if (gameState->recording) {
+    if (wasEverNewlyDown(input.keyL) && !gs->playingBack) {
+        if (gs->recording) {
             printf("Recording stopped. Starting infinite playback...\n");
-            closeFile(gameState->playbackFile);
-            readEntireFile("gameState.g", MAX_GAME_STATE_SIZE, gameState);
-            gameState->recording = false;
-            gameState->playingBack = true;
-            gameState->playbackFile = openFileForReading("inputs.g");
+            closeFile(gs->playbackFile);
+            readEntireFile("gs.g", MAX_GAME_STATE_SIZE, gs);
+            gs->recording = false;
+            gs->playingBack = true;
+            gs->playbackFile = openFileForReading("inputs.g");
         } else {
             printf("Recording started.\n");
-            writeEntireFile("gameState.g", MAX_GAME_STATE_SIZE, gameState);
-            gameState->recording = true;
-            gameState->playingBack = false;
-            gameState->playbackFile = openFileForWriting("inputs.g");
+            writeEntireFile("gs.g", MAX_GAME_STATE_SIZE, gs);
+            gs->recording = true;
+            gs->playingBack = false;
+            gs->playbackFile = openFileForWriting("inputs.g");
         }
     }
-    if (gameState->recording) {
-        writeNextToFile(gameState->playbackFile, sizeof(input), &input);
-    } else if (gameState->playingBack) {
-        if (!readNextFromFile(gameState->playbackFile, sizeof(input), &input)) {
-            closeFile(gameState->playbackFile);
-            readEntireFile("gameState.g", MAX_GAME_STATE_SIZE, gameState);
-            gameState->recording = false;
-            gameState->playingBack = true;
-            gameState->playbackFile = openFileForReading("inputs.g");
-            readNextFromFile(gameState->playbackFile, sizeof(input), &input);
+    if (gs->recording) {
+        writeNextToFile(gs->playbackFile, sizeof(input), &input);
+    } else if (gs->playingBack) {
+        if (!readNextFromFile(gs->playbackFile, sizeof(input), &input)) {
+            closeFile(gs->playbackFile);
+            readEntireFile("gs.g", MAX_GAME_STATE_SIZE, gs);
+            gs->recording = false;
+            gs->playingBack = true;
+            gs->playbackFile = openFileForReading("inputs.g");
+            readNextFromFile(gs->playbackFile, sizeof(input), &input);
         }
     }
 
-    gameState->btn0 = input.btnLeft.currentlyDown;
-    gameState->btn1 = input.btnMiddle.currentlyDown;
-    gameState->btn2 = input.btnRight.currentlyDown;
-    gameState->xOffset = input.mouseX;
+    const float playerSpeed = 3.0f;
+    float dx = 0.0f;
+    float dy = 0.0f;
+    if (wasEverDown(input.keyW)) {
+        dy -= playerSpeed;
+    }
+    if (wasEverDown(input.keyA)) {
+        dx -= playerSpeed;
+    }
+    if (wasEverDown(input.keyS)) {
+        dy += playerSpeed;
+    }
+    if (wasEverDown(input.keyD)) {
+        dx += playerSpeed;
+    }
+
+    float newX = gs->playerX + dx;
+    float newY = gs->playerY + dy;
+
+    if (isPointInTile(gs, newX, gs->playerY)) {
+       dx = 0.0f;
+    }
+    if (isPointInTile(gs, gs->playerX, newY)) {
+        dy = 0.0f;
+    }
+
+    float tileMapHeight = 8.0f * tileHeight;
+    float tileMapWidth = 15.0f * tileWidth;
+
+    if (newX < tileWidth / 2.0f) {
+        if (gs->tileMapX > 0) {
+            gs->tileMapX--;
+            dx += tileMapWidth;
+        }
+    }
+    if (newX > tileMapWidth + tileWidth / 2.0f) {
+        if (gs->tileMapX < 1) {
+            gs->tileMapX++;
+            dx -= tileMapWidth;
+        }
+    }
+    if (newY < 0) {
+        if (gs->tileMapY > 0) {
+            gs->tileMapY--;
+            dy += tileMapHeight;
+        }
+    }
+    if (newY > tileMapHeight + tileHeight / 2.0f) {
+        if (gs->tileMapY < 1) {
+            gs->tileMapY++;
+            dy -= tileMapHeight;
+        }
+    }
+    gs->currentTileMap = (int*) gs->tileMaps[gs->tileMapY][gs->tileMapX];
+    gs->playerX += dx;
+    gs->playerY += dy;
+
     return true;
 }
 
-void drawRect(Window window, int x, int y, int width, int height) {
-    const int x2 = x + width, y2 = y + height;
-    for (int x1 = x; x1 < x2; x1++) {
-        for (int y1 = y; y1 < y2; y1++) {
-            setPixel(window, x1, y1, {.rgb = 0xffffffff});
+void
+drawRect(Window window, int x, int y, int width, int height, float r, float g,
+    float b) {
+    Pixel pixel{};
+    pixel.red = (uint8_t) (r * 255.0f);
+    pixel.green = (uint8_t) (g * 255.0f);
+    pixel.blue = (uint8_t) (b * 255.0f);
+
+    int x1 = max(0, x), y1 = max(0, y);
+    int x2 = min(window.width, x + width), y2 = min(window.height, y + height);
+    for (int x = x1; x < x2; x++) {
+        for (int y = y1; y < y2; y++) {
+            setPixel(window, x, y, pixel);
         }
     }
 }
 
 void render(void* pGameState, Window window, float t) {
-    const GameState gameState = *(GameState*) pGameState;
-    auto row = (uint8_t*) window.pixels;
-    for (int y = 0; y < window.height; y++) {
-        auto pixel = (int*) row;
-        for (int x = 0; x < window.width; x++) {
-            const uint8_t blue = x - gameState.xOffset;
-            const uint8_t green = y;
-            *pixel++ = ((green << 8) | blue);
+    const GameState gs = *(GameState*) pGameState;
+    size_t pixelCount = window.width * window.height;
+    for (size_t i = 0; i < pixelCount; i++) {
+        window.pixels[i] = {.rgb = 0};
+    }
+
+    for (int x = 0; x < 16; x++) {
+        for (int y = 0; y < 9; y++) {
+            if (gs.currentTileMap[y * 16 + x]) {
+                drawRect(window, x * tileWidth, y * tileHeight, tileWidth,
+                    tileHeight, 0.3f, 0.3f, 0.4f);
+            }
         }
-        row += window.width * sizeof(Pixel);
     }
-    if (gameState.btn0) {
-        drawRect(window, 10, 10, 10, 10);
-    }
-    if (gameState.btn1) {
-        drawRect(window, 30, 10, 10, 10);
-    }
-    if (gameState.btn2) {
-        drawRect(window, 50, 10, 10, 10);
-    }
+    drawRect(window, (int) gs.playerX - 25, (int) gs.playerY - 80,
+        50, 80, 0.1f, 0.5f, 0.8f);
+    drawRect(window, (int) gs.playerX - 3, (int) gs.playerY - 3,
+        6, 6, 1.0f, 0.0f, 0.0f);
 }
 
 void writeSound(void* pGameState, size_t sampleCount, SoundSample samples[]) {
