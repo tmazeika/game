@@ -1,6 +1,7 @@
 #include "../platform.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 #include <ctime>
 #include <sys/stat.h>
@@ -8,7 +9,9 @@
 double getTime() {
     timespec time{};
     assert(clock_gettime(CLOCK_MONOTONIC_RAW, &time) == 0);
-    return (double) time.tv_sec + (double) time.tv_nsec / 1000000000.0;
+    static int64_t firstS = time.tv_sec - (1L << 32);
+    return (double) (time.tv_sec - firstS) +
+           (double) time.tv_nsec / 1000000000.0;
 }
 
 File openFileForReading(const char* filename) {
@@ -23,7 +26,7 @@ File openFileForWriting(const char* filename) {
     return (File) file;
 }
 
-bool readNextFromFile(File file, size_t bytes, void *dest) {
+bool readNextFromFile(File file, size_t bytes, void* dest) {
     const size_t items = fread(dest, bytes, 1, (FILE*) file);
     assert(ferror((FILE*) file) == 0);
     return items == 1;
