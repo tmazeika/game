@@ -3,95 +3,114 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cassert>
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
+#define pow2(x) ((x) * (x))
+
+struct Position {
+    uint64_t tileX;
+    uint64_t tileY;
+    float subTileX;
+    float subTileY;
+};
+
+const size_t TILE_CHUNK_DIM = 16;
+
+#define arithmeticModf(x, y) ((x) - (y) * floorf((x) / (y)))
+
+void normalizePos(Position* pos) {
+    pos->tileX += (int) floorf(pos->subTileX);
+    pos->tileY += (int) floorf(pos->subTileY);
+    pos->subTileX = arithmeticModf(pos->subTileX, 1.0f);
+    pos->subTileY = arithmeticModf(pos->subTileY, 1.0f);
+}
+
+bool isValidPos(Position* pos) {
+    int x = (int) floorf(pos->subTileX);
+    int y = (int) floorf(pos->subTileY);
+    bool ok;
+    if (x < 0) {
+        ok = pos->tileX >= -x;
+    } else {
+        ok = pos->tileX <= ((uint64_t) -1) - x;
+    }
+    if (y < 0) {
+        ok = ok && pos->tileY >= -y;
+    } else {
+        ok = ok && pos->tileY <= ((uint64_t) -1) - y;
+    }
+    return ok;
+}
+
+typedef uint8_t Tile;
+
+struct TileChunk {
+    uint32_t x;
+    uint32_t y;
+    Tile tiles[TILE_CHUNK_DIM][TILE_CHUNK_DIM];
+};
+
+struct TileMap {
+    size_t chunkCount;
+    TileChunk* chunks;
+};
+
+bool testPosInTileMap(TileMap* map, Position* pos) {
+    for (size_t i = 0; i < map->chunkCount; i++) {
+        TileChunk* chunk = map->chunks + i;
+        if ((chunk->x <= pos->tileX &&
+             pos->tileX < chunk->x + TILE_CHUNK_DIM) &&
+            (chunk->y <= pos->tileY &&
+             pos->tileY < chunk->y + TILE_CHUNK_DIM)) {
+            uint64_t tileX = pos->tileX - chunk->x;
+            uint64_t tileY = pos->tileY - chunk->y;
+            return chunk->tiles[tileY][tileX] == 1;
+        }
+    }
+    return false;
+}
+
+struct MemoryRegion {
+    size_t size;
+    size_t used;
+    uint8_t* base;
+};
+
+void* memoryPush_(MemoryRegion* mem, size_t bytes) {
+    assert(mem->used + bytes <= mem->size);
+    mem->used += bytes;
+    void* base = mem->base;
+    mem->base += bytes;
+    return base;
+}
+
+#define memoryPush(mem, type) (type *) memoryPush_(mem, sizeof(type))
 
 struct GameState {
-    int tileMapX = 0;
-    int tileMapY = 0;
-    float playerX = 100;
-    float playerY = 100;
-
-    int tileMap00[9][16] = {
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0},
-        {1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    };
-    int tileMap10[9][16] = {
-        {1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1},
-        {1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0},
-        {1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1},
-        {1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    };
-    int tileMap01[9][16] = {
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    };
-    int tileMap11[9][16] = {
-        {1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-        {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    };
-    int* currentTileMap;
-    int* tileMaps[2][2];
-
     bool recording = false;
     bool playingBack = false;
     File playbackFile = nullptr;
+
+    MemoryRegion heap;
+
+    TileMap tileMap;
+    Position playerPos;
 };
 
-float tileWidth = 80.0f;
-float tileHeight = 90.0f;
-
-bool isPointEscaped(GameState* gs, float x, float y) {
-    int tileX = (int) (x / tileWidth);
-    int tileY = (int) (y / tileHeight);
-    return tileX >= 16 || tileY >= 9 || tileX < 0 || tileY < 0;
-}
-
-bool isPointInTile(GameState* gs, float x, float y) {
-    int tileX = (int) (x / tileWidth);
-    int tileY = (int) (y / tileHeight);
-    return isPointEscaped(gs, x, y) ||
-           gs->currentTileMap[tileY * 16 + tileX];
-}
+const float pixelsPerMeter = 70.0f;
+const float tileSize = 1.4f;
 
 void initGameState(void* pGameState) {
     *(GameState*) pGameState = GameState{};
     auto gs = (GameState*) pGameState;
-    gs->currentTileMap = (int*) gs->tileMap00;
-    gs->tileMaps[0][0] = (int*) gs->tileMap00;
-    gs->tileMaps[1][0] = (int*) gs->tileMap10;
-    gs->tileMaps[0][1] = (int*) gs->tileMap01;
-    gs->tileMaps[1][1] = (int*) gs->tileMap11;
+    gs->heap.size = MAX_GAME_STATE_SIZE - sizeof(GameState);
+    gs->heap.base = (uint8_t*) pGameState + sizeof(GameState);
+    gs->tileMap.chunks = (TileChunk*) gs->heap.base;
 }
 
-bool update(void* pGameState, Input input) {
+bool update(void* pGameState, Window window, Input input) {
     auto gs = (GameState*) pGameState;
 
     if (input.closeRequested) {
@@ -126,113 +145,88 @@ bool update(void* pGameState, Input input) {
         }
     }
 
-    const float playerSpeed = 3.0f;
-    float dx = 0.0f;
-    float dy = 0.0f;
+    int8_t dx = 0;
+    int8_t dy = 0;
     if (wasEverDown(input.keyW)) {
-        dy -= playerSpeed;
+        dy += 1;
     }
     if (wasEverDown(input.keyA)) {
-        dx -= playerSpeed;
+        dx -= 1;
     }
     if (wasEverDown(input.keyS)) {
-        dy += playerSpeed;
+        dy -= 1;
     }
     if (wasEverDown(input.keyD)) {
-        dx += playerSpeed;
+        dx += 1;
     }
-
-    float newX = gs->playerX + dx;
-    float newY = gs->playerY + dy;
-
-    if (isPointInTile(gs, newX, gs->playerY)) {
-       dx = 0.0f;
+    Position playerPos = gs->playerPos;
+    if (dx != 0 || dy != 0) {
+        float speed = 0.03f;
+        float magnitude = sqrtf((float) (pow2(dx) + pow2(dy)));
+        playerPos.subTileX += (float) dx / magnitude * speed;
+        playerPos.subTileY += (float) dy / magnitude * speed;
     }
-    if (isPointInTile(gs, gs->playerX, newY)) {
-        dy = 0.0f;
-    }
-
-    float tileMapHeight = 8.0f * tileHeight;
-    float tileMapWidth = 15.0f * tileWidth;
-
-    if (newX < tileWidth / 2.0f) {
-        if (gs->tileMapX > 0) {
-            gs->tileMapX--;
-            dx += tileMapWidth;
+    if (isValidPos(&playerPos)) {
+        normalizePos(&playerPos);
+        if (!testPosInTileMap(&gs->tileMap, &playerPos)) {
+            gs->playerPos = playerPos;
         }
     }
-    if (newX > tileMapWidth + tileWidth / 2.0f) {
-        if (gs->tileMapX < 1) {
-            gs->tileMapX++;
-            dx -= tileMapWidth;
-        }
-    }
-    if (newY < 0) {
-        if (gs->tileMapY > 0) {
-            gs->tileMapY--;
-            dy += tileMapHeight;
-        }
-    }
-    if (newY > tileMapHeight + tileHeight / 2.0f) {
-        if (gs->tileMapY < 1) {
-            gs->tileMapY++;
-            dy -= tileMapHeight;
-        }
-    }
-    gs->currentTileMap = (int*) gs->tileMaps[gs->tileMapY][gs->tileMapX];
-    gs->playerX += dx;
-    gs->playerY += dy;
-
     return true;
 }
 
 void
-drawRect(Window window, int x, int y, int width, int height, float r, float g,
+drawRect(Window window, int x1, int y1, int x2, int y2, float r, float g,
     float b) {
     Pixel pixel{};
     pixel.red = (uint8_t) (r * 255.0f);
     pixel.green = (uint8_t) (g * 255.0f);
     pixel.blue = (uint8_t) (b * 255.0f);
 
-    int x1 = max(0, x), y1 = max(0, y);
-    int x2 = min(window.width, x + width), y2 = min(window.height, y + height);
-    for (int x = x1; x < x2; x++) {
-        for (int y = y1; y < y2; y++) {
+    int minX = max(0, min(x1, x2));
+    int minY = max(0, min(y1, y2));
+    int maxX = min(window.width - 1, max(x1, x2));
+    int maxY = min(window.height - 1, max(y1, y2));
+
+    for (int y = maxY; y >= minY; y--) {
+        for (int x = minX; x <= maxX; x++) {
             setPixel(window, x, y, pixel);
         }
     }
 }
 
 void render(void* pGameState, Window window, float t) {
-    const GameState gs = *(GameState*) pGameState;
+    auto gs = *(GameState*) pGameState;
+
+    // Clear screen.
     size_t pixelCount = window.width * window.height;
     for (size_t i = 0; i < pixelCount; i++) {
         window.pixels[i] = {.rgb = 0};
     }
 
-    for (int x = 0; x < 16; x++) {
-        for (int y = 0; y < 9; y++) {
-            if (gs.currentTileMap[y * 16 + x]) {
-                drawRect(window, x * tileWidth, y * tileHeight, tileWidth,
-                    tileHeight, 0.3f, 0.3f, 0.4f);
-            }
-        }
-    }
-    drawRect(window, (int) gs.playerX - 25, (int) gs.playerY - 80,
-        50, 80, 0.1f, 0.5f, 0.8f);
-    drawRect(window, (int) gs.playerX - 3, (int) gs.playerY - 3,
-        6, 6, 1.0f, 0.0f, 0.0f);
+    int tileX = (int) ((float) gs.playerPos.tileX * tileSize * pixelsPerMeter);
+    int tileY = (int) ((float) gs.playerPos.tileY * tileSize * pixelsPerMeter);
+    drawRect(window, tileX, tileY, tileX + (int) (tileSize * pixelsPerMeter), tileY + (int) (tileSize * pixelsPerMeter), 0.05f, 0.1f, 0.15f);
+
+    int playerX = (int) (((float) gs.playerPos.tileX + gs.playerPos.subTileX) *
+                         tileSize * pixelsPerMeter);
+    int playerY = (int) (((float) gs.playerPos.tileY + gs.playerPos.subTileY) *
+                         tileSize * pixelsPerMeter);
+    drawRect(window, playerX - 15, playerY - 15, playerX + 15, playerY + 15,
+        1.0f, 0.0f, 0.0f);
+    drawRect(window, playerX - 5, playerY - 5, playerX + 5, playerY + 5,
+        1.0f, 1.0f, 0.0f);
 }
 
 void writeSound(void* pGameState, size_t sampleCount, SoundSample samples[]) {
 //    auto gameState = (GameState*) gameStatePtr;
     static float t = 0.0f;
 
-    const float pi2 = 2.0f * 3.1416f;
-    const float maxVolume = 0; // Muted for now...
-//    const float maxVolume = 0x7fff;
-    const float hz = 261.6255653005986f;
-    const float period = 44100.0f / hz;
+    float pi2 = 2.0f * 3.1416f;
+    float maxVolume = 0; // Muted for now...
+//    float maxVolume = 0x7fff;
+    float hz = 261.6255653005986f;
+    float period = 44100.0f / hz;
 
     for (size_t i = 1; i < sampleCount; i += 2) {
         samples[i - 1] = samples[i] = (SoundSample) (

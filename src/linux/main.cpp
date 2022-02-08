@@ -82,13 +82,13 @@ int main() {
         }
 
         // Update (fixed time step).
+        const Window window = getXCBWindow(xcb);
         while (running && lagTime >= S_PER_UPDATE) {
             lagTime -= S_PER_UPDATE;
-            running = gameLib.update(gameState, pollXCBEvents(xcb));
+            running = gameLib.update(gameState, window, pollXCBEvents(xcb));
         }
 
         // Render.
-        const Window window = getXCBWindow(xcb);
         const auto tTime = (float) (lagTime / S_PER_UPDATE);
         gameLib.render(gameState, window, tTime);
         updateXCBGraphics(xcb);

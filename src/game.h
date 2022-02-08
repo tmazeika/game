@@ -18,7 +18,7 @@
 
 typedef INIT_GAME_STATE((*InitGameState));
 
-#define UPDATE(name) bool name(void* gameState, Input input)
+#define UPDATE(name) bool name(void* gameState, Window window, Input input)
 
 typedef UPDATE((*Update));
 

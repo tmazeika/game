@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-const size_t MAX_GAME_STATE_SIZE = (1LL << 20) * 8; // 8 MiB.
+const size_t MAX_GAME_STATE_SIZE = (1LL << 20) * 16; // 16 MiB.
 
 /**
  * Gets the current time in seconds. The returned value means nothing on its
